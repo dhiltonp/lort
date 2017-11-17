@@ -27,3 +27,10 @@ TODO
 `lort discover` should jump on all network namespaces listed by `lort list`,
 and autodetect uplink or downlink, device type, firmware version and uniqueness.
 
+potential features:
+ 
+`lort upgrade`: build and install firmware for all discovered devices, given a specified source dir.
+
+`lort test`: start up pre-defined servers, execute a test, etc.
+
+`lort configure`: configure a network.

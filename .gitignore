@@ -1,3 +1,5 @@
-.cache
-.idea
-.venv
+.cache/
+.idea/
+.venv/
+.eggs/
+__pycache__/

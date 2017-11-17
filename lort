@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import argparse
 
-from netns import setup_netns, teardown_netns, get_netns_vlans, list_netns
-from utils import get_usable_interfaces
+from netns import setup_netns, teardown_netns, get_namespaces, exec_netns
+from pyroute2_helpers import get_usable_interfaces
 
 
 def vlans_parser(string):
@@ -28,10 +28,10 @@ def vlans_parser(string):
 
 def validate_vlan_range(vlans):
     errors = []
-    if vlans[0] < 2:
-        errors.append(f'lowest vlan ({vlans[0]}) < 2')
-    if vlans[-1] > 250:
-        errors.append(f'highest vlan ({vlans[-1]}) > 250')
+    if vlans[0] < 1:
+        errors.append(f'lowest vlan ({vlans[0]}) < 1')
+    if vlans[-1] > 4094:
+        errors.append(f'highest vlan ({vlans[-1]}) > 4094')
 
     return errors
 
@@ -57,15 +57,19 @@ def parse_args():
 
     list_parser = subparsers.add_parser('list')
 
+    exec_parser = subparsers.add_parser('run')
+    exec_parser.add_argument('program', nargs='*', help='program to run')
+
     args = parser.parse_args()
     if args.command is None:
         parser.print_usage()
         exit(2)
+    errors = []
     if args.command in ['setup', 'teardown']:
-        errors = validate_vlan_range(args.vlans)
-        if errors:
-            [print(e) for e in errors]
-            exit(1)
+        errors.extend(validate_vlan_range(args.vlans))
+    if errors:
+        [print(e) for e in errors]
+        exit(1)
 
     return args
 
@@ -73,17 +77,24 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     if args.command == 'setup':
-        current_vlans = get_netns_vlans(args.prefix)
+        current_nses = get_namespaces(args.prefix)
         for vlan in args.vlans:
-            if vlan not in current_vlans:
+            if vlan not in current_nses:
                 setup_netns(args.device, args.prefix, vlan)
     elif args.command == 'teardown':
-        current_vlans = get_netns_vlans(args.prefix)
-        for vlan in args.vlans:
-            if vlan in current_vlans:
-                teardown_netns(args.prefix, vlan)
+        current_nses = get_namespaces(args.prefix)
+        remove_nses = [f'{args.prefix}_{vlan}' for vlan in args.vlans]
+        for ns in remove_nses:
+            if ns in current_nses.keys():
+                teardown_netns(ns, current_nses[ns])
     elif args.command == 'list':
-        out = list_netns(args.prefix)
-        [print(ns) for ns in out]
+        info = get_namespaces(args.prefix)
+        for ns in info.keys():
+            print(ns, info[ns])
     elif args.command == 'discover':
+        raise NotImplementedError
+    elif args.command == 'run':
+        for ns in get_namespaces(args.prefix).keys():
+            print(exec_netns(ns, args.program))
+    else:
         raise NotImplementedError
