@@ -4,7 +4,8 @@ from pyroute2_helpers import get_name, get_ns_interfaces
 
 
 class NSInfo(dict):
-    def __init__(self):
+    def __init__(self, ns):
+        self.ns = ns
         self.devices = {}
         self.type = None
 
@@ -35,11 +36,11 @@ def teardown_netns(namespace, devices):
 def get_namespaces(prefix):
     namespaces = getoutput('ip netns list').split('\n')
     filtered = [ns for ns in namespaces if ns.startswith(prefix)]
-    results = {}
+    results = []
     for ns in filtered:
-        info = NSInfo()
+        info = NSInfo(ns)
         info.devices = [get_name(ns) for ns in get_ns_interfaces(ns)]
-        results[ns] = info
+        results.append(info)
 
     # results = {}
     # for ns in filtered:

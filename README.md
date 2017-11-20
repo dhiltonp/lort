@@ -35,8 +35,6 @@ potential features:
 
 `lort configure`: configure a network.
 
-Rework netns to list instead of dict
-
 improve backing data structure
 
 switch to go for fun/easy pipeline/parallelism

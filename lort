@@ -82,23 +82,23 @@ if __name__ == '__main__':
     elif args.command == 'teardown':
         current_nses = get_namespaces(args.prefix)
         for ns in current_nses:
-            if ns in current_nses.keys():
-                teardown_netns(ns, current_nses[ns])
+            if ns in current_nses:
+                teardown_netns(ns.ns, ns.devices)
     elif args.command == 'list':
         info = get_namespaces(args.prefix)
-        for ns in info.keys():
+        for ns in info:
             print(ns, info[ns])
     elif args.command == 'discover':
         namespaces = discover(args.prefix)
         # print('wan')
-        # [print(ns) for ns in namespaces if namespaces[ns].type == 'wan']
+        # [print(ns.ns) for ns in namespaces if ns.type == 'wan']
         # print('lan')
-        [print(namespaces[ns].cpuinfo['machine']) for ns in namespaces if namespaces[ns].type == 'lan']
+        [print(ns.cpuinfo['machine']) for ns in namespaces if ns.type == 'lan']
         # print('other')
-        # [print(ns, namespaces[ns].ip) for ns in namespaces if namespaces[ns].type == None]
+        # [print(ns.ns, ns.ip) for ns in namespaces if ns.type == None]
 
     elif args.command == 'run':
-        for ns in get_namespaces(args.prefix).keys():
-            print(exec_netns(ns, args.program))
+        for ns in get_namespaces(args.prefix):
+            print(exec_netns(ns.ns, args.program))
     else:
         raise NotImplementedError
