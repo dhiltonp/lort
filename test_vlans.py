@@ -1,7 +1,4 @@
-import pytest
-
-import lort
-from lort import vlans_parser
+from lort import vlans_parser, validate_vlan_range
 
 
 def test_vlans_parser():
@@ -21,13 +18,13 @@ def test_vlans_parser():
 
 
 def test_validate_vlan_range():
-    errors = vlans.validate_vlan_range([-1])
+    errors = validate_vlan_range([-1])
     assert len(errors) == 1
     assert errors[0] == 'lowest vlan (-1) < 1'
 
-    errors = vlans.validate_vlan_range([4095])
+    errors = validate_vlan_range([4095])
     assert len(errors) == 1
     assert errors[0] == 'highest vlan (4095) > 4094'
 
-    vlans.validate_vlan_range(range(2, 251))
+    validate_vlan_range(range(2, 251))
 

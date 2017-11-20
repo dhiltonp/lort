@@ -3,6 +3,12 @@ from subprocess import check_call, getoutput, run
 from pyroute2_helpers import get_name, get_ns_interfaces
 
 
+class NSInfo(dict):
+    def __init__(self):
+        self.devices = {}
+        self.type = None
+
+
 def setup_netns(device, prefix, vlan):
     vlan_dev = f'{device[:5]}_{vlan}'
     namespace = f'{prefix}_{vlan}'
@@ -13,16 +19,16 @@ def setup_netns(device, prefix, vlan):
     #check_call(f'ip netns exec {namespace} ip addr add 192.168.0.{vlan}/24 brd + dev {vlan_dev}'.split())
 
 
-def exec_netns(namespace, cmd):
+def exec_netns(namespace, cmd, timeout=None):
     args = f'ip netns exec {namespace}'.split()
     args.extend(cmd)
-    proc = run(args)
+    proc = run(args, timeout=timeout)
     return proc
 
 
 def teardown_netns(namespace, devices):
     for dev in devices:
-        run(f'ip netns exec {namespace} ip link del {dev}', shell=True)
+        check_call(f'ip netns exec {namespace} ip link del {dev}', shell=True)
     check_call(f'ip netns del {namespace}'.split())
 
 
@@ -31,6 +37,12 @@ def get_namespaces(prefix):
     filtered = [ns for ns in namespaces if ns.startswith(prefix)]
     results = {}
     for ns in filtered:
-        results[ns] = [get_name(ns) for ns in get_ns_interfaces(ns)]
+        info = NSInfo()
+        info.devices = [get_name(ns) for ns in get_ns_interfaces(ns)]
+        results[ns] = info
+
+    # results = {}
+    # for ns in filtered:
+    #     results[ns] = [get_name(ns) for ns in get_ns_interfaces(ns)]
     return results
 

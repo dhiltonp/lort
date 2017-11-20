@@ -25,7 +25,7 @@ TODO
 ----
 
 `lort discover` should jump on all network namespaces listed by `lort list`,
-and autodetect uplink or downlink, device type, firmware version and uniqueness.
+and autodetect ~~uplink or downlink, device type, firmware version~~ and uniqueness.
 
 potential features:
  
@@ -34,3 +34,9 @@ potential features:
 `lort test`: start up pre-defined servers, execute a test, etc.
 
 `lort configure`: configure a network.
+
+Rework netns to list instead of dict
+
+improve backing data structure
+
+switch to go for fun/easy pipeline/parallelism

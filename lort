@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import argparse
 
+from discover import discover
 from netns import setup_netns, teardown_netns, get_namespaces, exec_netns
 from pyroute2_helpers import get_usable_interfaces
 
@@ -49,9 +50,6 @@ def parse_args():
                               help='vlans to work on ("2", "2-10", "2-10,20-30")')
 
     teardown_parser = subparsers.add_parser('teardown')
-    teardown_parser.add_argument('vlans',
-                                 type=vlans_parser,
-                                 help='vlans to work on ("2", "2-10", "2-10,20-30")')
 
     discover_parser = subparsers.add_parser('discover')
 
@@ -65,7 +63,7 @@ def parse_args():
         parser.print_usage()
         exit(2)
     errors = []
-    if args.command in ['setup', 'teardown']:
+    if args.command in ['setup']:
         errors.extend(validate_vlan_range(args.vlans))
     if errors:
         [print(e) for e in errors]
@@ -83,8 +81,7 @@ if __name__ == '__main__':
                 setup_netns(args.device, args.prefix, vlan)
     elif args.command == 'teardown':
         current_nses = get_namespaces(args.prefix)
-        remove_nses = [f'{args.prefix}_{vlan}' for vlan in args.vlans]
-        for ns in remove_nses:
+        for ns in current_nses:
             if ns in current_nses.keys():
                 teardown_netns(ns, current_nses[ns])
     elif args.command == 'list':
@@ -92,7 +89,14 @@ if __name__ == '__main__':
         for ns in info.keys():
             print(ns, info[ns])
     elif args.command == 'discover':
-        raise NotImplementedError
+        namespaces = discover(args.prefix)
+        # print('wan')
+        # [print(ns) for ns in namespaces if namespaces[ns].type == 'wan']
+        # print('lan')
+        [print(namespaces[ns].cpuinfo['machine']) for ns in namespaces if namespaces[ns].type == 'lan']
+        # print('other')
+        # [print(ns, namespaces[ns].ip) for ns in namespaces if namespaces[ns].type == None]
+
     elif args.command == 'run':
         for ns in get_namespaces(args.prefix).keys():
             print(exec_netns(ns, args.program))
