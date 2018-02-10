@@ -93,7 +93,7 @@ if __name__ == '__main__':
         # print('wan')
         # [print(ns.ns) for ns in namespaces if ns.type == 'wan']
         # print('lan')
-        [print(ns.cpuinfo['machine']) for ns in namespaces if ns.type == 'lan']
+        [print(ns) for ns in namespaces if ns.type == 'lan']
         # print('other')
         # [print(ns.ns, ns.ip) for ns in namespaces if ns.type == None]
 

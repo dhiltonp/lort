@@ -55,14 +55,6 @@ def _request_ips(namespaces):
     return namespaces
 
 
-def _enable_ssh(namespaces):
-    # on DIR-615, enabled by default... test with more devices
-    for ns in namespaces:
-        if ns.type != 'lan':
-            continue
-    return namespaces
-
-
 def _id_system(namespaces):
     # files : /proc/cpuinfo
     #         /etc/os-release
@@ -73,7 +65,7 @@ def _id_system(namespaces):
     for ns in namespaces:
         if ns.type != 'lan':
             continue
-        cpuinfo_out = getoutput(f'ip netns exec {ns.ns} ssh root@{ns.gw} cat /proc/cpuinfo').strip()
+        cpuinfo_out = getoutput(f'ip netns exec {ns.ns} ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@{ns.gw} cat /proc/cpuinfo').strip()
         cpuinfo = {}
         for line in cpuinfo_out.split('\n'):
             k, v = line.split(':', 1)
@@ -85,7 +77,6 @@ def _id_system(namespaces):
 def discover(prefix):
     namespaces = get_namespaces(prefix)
     namespaces = _request_ips(namespaces)
-    namespaces = _enable_ssh(namespaces)
     namespaces = _id_system(namespaces)
 
     return namespaces

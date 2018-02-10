@@ -1,14 +1,18 @@
+from collections import defaultdict
 from subprocess import check_call, getoutput, run
 
 from pyroute2_helpers import get_name, get_ns_interfaces
 
 
-class NSInfo(dict):
+class NSInfo:
     def __init__(self, ns):
         self.ns = ns
         self.devices = {}
         self.type = None
+        self.cpuinfo = defaultdict(str)
 
+    def __str__(self):
+        return f'{self.ns}\t{self.cpuinfo["machine"]}'
 
 def setup_netns(device, prefix, vlan):
     vlan_dev = f'{device[:5]}_{vlan}'
