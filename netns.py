@@ -10,9 +10,11 @@ class NSInfo:
         self.devices = {}
         self.type = None
         self.cpuinfo = defaultdict(str)
+        self.release = defaultdict(str)
+        self.board = None
 
     def __str__(self):
-        return f'{self.ns}\t{self.cpuinfo["machine"]}'
+        return f'{self.ns}\t{self.release["DISTRIB_REVISION"]}\t{self.board}\t{self.cpuinfo["machine"]}'
 
 def setup_netns(device, prefix, vlan):
     vlan_dev = f'{device[:5]}_{vlan}'

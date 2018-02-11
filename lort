@@ -99,6 +99,7 @@ if __name__ == '__main__':
 
     elif args.command == 'run':
         for ns in get_namespaces(args.prefix):
-            print(exec_netns(ns.ns, args.program))
+            for p in args.program:
+                print(exec_netns(ns.ns, p.split()))
     else:
         raise NotImplementedError

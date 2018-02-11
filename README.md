@@ -8,6 +8,7 @@ Requirements:
 - A VLAN-capable switch
 - A Linux PC to drive test loads
 - At least 2 routers with fresh installs of Lede/OpenWRT
+- python3.6, pyroute2, busybox
 
 To use:
 

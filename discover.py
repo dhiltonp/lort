@@ -1,11 +1,7 @@
 import re
-from itertools import islice
-from math import floor
 from subprocess import TimeoutExpired, Popen, PIPE, check_call, getoutput, CalledProcessError
 
-import time
-
-from netns import get_namespaces, exec_netns
+from netns import get_namespaces
 
 
 def _request_ips(namespaces):
@@ -17,8 +13,13 @@ def _request_ips(namespaces):
                 if ns.type is None:
                     check_call(f'ip netns exec {ns.ns} ip link set {ns.devices[0]} up'.split())
                     proc = Popen(
-                        f'ip netns exec {ns.ns} busybox udhcpc -i {ns.devices[0]} -n -q -T 1'.split(),
-                        stdout=PIPE, stderr=PIPE)
+                       f'ip netns exec {ns.ns} busybox udhcpc -i {ns.devices[0]} -n -q -T 1'.split(),
+                       stdout=PIPE, stderr=PIPE)
+                    # switch to ip instead of busybox dhcp?
+                    # proc = Popen(
+                    #     f'ip netns exec {ns.ns} ip addr add 192.168.1.10/24 dev {ns.devices[0]}'.split(),
+                    #     stdout=PIPE, stderr=PIPE
+                    # )
                     procs.append((ns, proc))
 
         finally:
@@ -55,22 +56,47 @@ def _request_ips(namespaces):
     return namespaces
 
 
+def _getoutput(cmd, ns):
+    return getoutput(
+        f'ip netns exec {ns.ns} ssh -o StrictHostKeyChecking=no '
+        f'-o UserKnownHostsFile=/dev/null root@{ns.gw} '
+        f'{cmd}').strip()
+
+
+def _get_cpuinfo(ns):
+    cpuinfo_out = _getoutput(f'cat /proc/cpuinfo', ns)
+    cpuinfo = {}
+    for line in cpuinfo_out.split('\n'):
+        k, v = line.split(':', 1)
+        cpuinfo[k.strip()] = v.strip()
+    return cpuinfo
+
+
+def _get_board(ns):
+    out = _getoutput('cat /tmp/sysinfo/board_name', ns)
+    return out.split()[-1]
+
+
+def _get_release(ns):
+    out = _getoutput('cat /etc/openwrt_release', ns)
+    release = {}
+    for line in out.split('\n')[1:]:
+        k, v = line.split('=', 1)
+        release[k] = v[1:-1]
+    return release
+
+
 def _id_system(namespaces):
-    # files : /proc/cpuinfo
-    #         /etc/os-release
-    #         /etc/openwrt_release
-    #         /etc/openwrt_version
-    #         /etc/device_info
-    ### actual build device name?
+    # files:x  /proc/cpuinfo
+    #          /etc/os-release
+    #       x  /etc/openwrt_release
+    #       x  /tmp/sysinfo/board_name
     for ns in namespaces:
         if ns.type != 'lan':
             continue
-        cpuinfo_out = getoutput(f'ip netns exec {ns.ns} ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@{ns.gw} cat /proc/cpuinfo').strip()
-        cpuinfo = {}
-        for line in cpuinfo_out.split('\n'):
-            k, v = line.split(':', 1)
-            cpuinfo[k.strip()] = v.strip()
-        ns.cpuinfo = cpuinfo
+        ns.cpuinfo = _get_cpuinfo(ns)
+        ns.release = _get_release(ns)
+        ns.board = _get_board(ns)
     return namespaces
 
 
